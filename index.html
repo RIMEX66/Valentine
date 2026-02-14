@@ -3,9 +3,9 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ff4d6d" />
-    <title>💌 Pre Mel</title>
+    <title>💌 Pre Meli</title>
 
     <style>
         :root {
@@ -27,29 +27,29 @@
 
         body {
             margin: 0;
+            height: 100svh;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
             background: linear-gradient(135deg, var(--bg1), var(--bg2));
-            overflow: hidden;
-            min-height: 100svh;
+            overflow: clip;
             padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
         }
 
         .stage {
-            width: min(440px, 92vw);
-            min-height: 100svh;
-            /* full phone height */
+            width: 440px;
+            height: 560px;
             position: relative;
             perspective: 900px;
 
             display: flex;
             align-items: center;
             justify-content: center;
+
+            transform: scale(1);
+            transform-origin: center;
         }
-
-
 
         .tap-hint {
             position: absolute;
@@ -81,10 +81,7 @@
             height: 280px;
             cursor: pointer;
             touch-action: manipulation;
-            /* add this */
         }
-
-
 
         /* --- PAPER --- */
         .paper {
@@ -200,7 +197,6 @@
             transition: transform .12s ease;
         }
 
-        /* FIXED: active scale per-button (your previous nesting was invalid CSS) */
         #yes:active {
             transform: scale(.98);
         }
@@ -357,7 +353,6 @@
             z-index: 4;
             pointer-events: none;
 
-            /* toned down: pure black was too harsh */
             background: linear-gradient(to right,
                     rgba(0, 0, 0, .20),
                     rgba(0, 0, 0, .06),
@@ -459,49 +454,24 @@
         }
 
         @keyframes sealShake {
-            0% {
-                transform: translateX(-50%) rotate(0deg);
-            }
-
-            25% {
-                transform: translateX(-50%) rotate(-7deg);
-            }
-
-            50% {
-                transform: translateX(-50%) rotate(7deg);
-            }
-
-            75% {
-                transform: translateX(-50%) rotate(-4deg);
-            }
-
-            100% {
-                transform: translateX(-50%) rotate(0deg);
-            }
+            0% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(-7deg); }
+            50% { transform: translateX(-50%) rotate(7deg); }
+            75% { transform: translateX(-50%) rotate(-4deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
         }
 
         @keyframes tearShow {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes splitLeft {
-            to {
-                transform: translateX(-10px) rotate(-12deg);
-                opacity: 0;
-            }
+            to { transform: translateX(-10px) rotate(-12deg); opacity: 0; }
         }
 
         @keyframes splitRight {
-            to {
-                transform: translateX(10px) rotate(12deg);
-                opacity: 0;
-            }
+            to { transform: translateX(10px) rotate(12deg); opacity: 0; }
         }
     </style>
 </head>
@@ -552,7 +522,6 @@
         let dodges = 0;
         let ripped = false;
 
-        // No-dodge state
         let lastDodgeAt = 0;
         let dodgeCooldownUntil = 0;
         let noBase = null;
@@ -571,7 +540,7 @@
 
             setTimeout(() => {
                 paper.classList.add("armed");
-                resetNoBase(); // ✅ correct spot
+                resetNoBase();
                 requestAnimationFrame(() => {
                     paper.classList.add("pull");
                 });
@@ -589,15 +558,12 @@
             }, 180);
         }
 
-        // Clicking ANYWHERE on the envelope area rips the stamp first, then opens.
         envelopeWrap.addEventListener("pointerdown", (e) => {
             e.preventDefault();
             if (!ripped) ripStampThenOpen();
             else startOpenSequence();
         });
 
-
-        // Also allow direct stamp click (stops bubbling but uses same behavior)
         stamp.addEventListener("pointerdown", (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -605,21 +571,16 @@
             else startOpenSequence();
         });
 
-
-        // Guard: prevent accidental Yes right after a dodge
         yes.addEventListener("click", (e) => {
             e.stopPropagation();
             if (Date.now() - lastDodgeAt < 500) return;
             showSuccess();
         });
 
-        // Prevent click bubbling
         noBtn.addEventListener("click", (e) => e.stopPropagation());
 
         function measureNoBase() {
             const paperInner = paper.querySelector(".paper-inner");
-
-            // Temporarily remove transform to measure the true base position
             const prev = noBtn.style.transform;
             noBtn.style.transform = "";
 
@@ -672,7 +633,6 @@
 
             noBtn.style.transform = `translate(${dx}px, ${dy}px)`;
 
-            // Prevent "Yes" looking pressed due to mouse-up landing on it
             yes.style.pointerEvents = "none";
             setTimeout(() => { yes.style.pointerEvents = ""; }, 250);
 
@@ -686,9 +646,28 @@
             requestAnimationFrame(() => requestAnimationFrame(measureNoBase));
         }
 
-        // Dodge only when you actually press the No button
         noBtn.addEventListener("pointerdown", dodge);
         noBtn.addEventListener("click", (e) => e.preventDefault());
+
+        // ---- MOBILE SCALE FIX (uses REAL computed padding incl. safe-area) ----
+        const stage = document.querySelector(".stage");
+
+        function fitStage() {
+            const cs = getComputedStyle(document.body);
+            const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+            const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+
+            const vw = window.innerWidth - padX;
+            const vh = window.innerHeight - padY;
+
+            const scale = Math.min(1, vw / 440, vh / 560);
+
+            stage.style.transform = `scale(${scale})`;
+        }
+
+        window.addEventListener("resize", fitStage);
+        window.addEventListener("orientationchange", fitStage);
+        fitStage();
     </script>
 </body>
 
