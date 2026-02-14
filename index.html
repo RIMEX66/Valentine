@@ -39,11 +39,16 @@
 
         .stage {
             width: min(440px, 92vw);
-            height: min(560px, 88vh);
-            /* use viewport height */
+            min-height: 100svh;
+            /* full phone height */
             position: relative;
             perspective: 900px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+
 
 
         .tap-hint {
@@ -71,14 +76,11 @@
         }
 
         .envelope-wrap {
-            position: absolute;
-            left: 50%;
-            top: 56%;
-            transform: translate(-50%, -50%);
+            position: relative;
             width: min(420px, 92vw);
             height: 280px;
-            cursor: pointer;
         }
+
 
         /* --- PAPER --- */
         .paper {
