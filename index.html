@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ff4d6d" />
-    <title>💌 Pre Meli</title>
+    <title>💌 Pre Mel</title>
 
     <style>
         :root {
@@ -79,7 +79,11 @@
             position: relative;
             width: min(420px, 92vw);
             height: 280px;
+            cursor: pointer;
+            touch-action: manipulation;
+            /* add this */
         }
+
 
 
         /* --- PAPER --- */
@@ -586,17 +590,21 @@
         }
 
         // Clicking ANYWHERE on the envelope area rips the stamp first, then opens.
-        envelopeWrap.addEventListener("click", () => {
+        envelopeWrap.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
             if (!ripped) ripStampThenOpen();
             else startOpenSequence();
         });
 
+
         // Also allow direct stamp click (stops bubbling but uses same behavior)
-        stamp.addEventListener("click", (e) => {
+        stamp.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             if (!ripped) ripStampThenOpen();
             else startOpenSequence();
         });
+
 
         // Guard: prevent accidental Yes right after a dodge
         yes.addEventListener("click", (e) => {
