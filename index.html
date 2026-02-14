@@ -33,15 +33,18 @@
             font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
             background: linear-gradient(135deg, var(--bg1), var(--bg2));
             overflow: hidden;
+            min-height: 100svh;
             padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
         }
 
         .stage {
             width: min(440px, 92vw);
-            height: 560px;
+            height: min(560px, 88vh);
+            /* use viewport height */
             position: relative;
             perspective: 900px;
         }
+
 
         .tap-hint {
             position: absolute;
