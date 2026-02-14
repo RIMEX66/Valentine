@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="sk">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ff4d6d" />
+    <title>💌 Pre Meli</title>
+
+    <style>
+        :root {
+            --bg1: #ff4d6d;
+            --bg2: #ffb3c1;
+            --paper: #fffaf0;
+            --ink: #1f1f1f;
+            --shadow: 0 25px 60px rgba(0, 0, 0, .22);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg1), var(--bg2));
+            overflow: hidden;
+            padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        }
+
+        .stage {
+            width: min(440px, 92vw);
+            height: 560px;
+            position: relative;
+            perspective: 900px;
+        }
+
+        .tap-hint {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            opacity: .9;
+            animation: pulse 1.8s infinite;
+            user-select: none;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: .5
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        .envelope-wrap {
+            position: absolute;
+            left: 50%;
+            top: 56%;
+            transform: translate(-50%, -50%);
+            width: min(420px, 92vw);
+            height: 280px;
+            cursor: pointer;
+        }
+
+        /* --- PAPER --- */
+        .paper {
+            position: absolute;
+            left: 50%;
+            bottom: 34px;
+            width: 92%;
+            height: 310px;
+            background: var(--paper);
+            border-radius: 18px;
+            overflow: hidden;
+
+            transform: translate3d(-50%, 35px, 0);
+
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .18);
+            transition: transform 2.6s cubic-bezier(.22, 1.05, .25, 1),
+                opacity .18s linear,
+                box-shadow 2.6s cubic-bezier(.22, 1.05, .25, 1);
+
+            z-index: 1;
+
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .paper.armed {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .paper.pull {
+            transform: translate3d(-50%, -210px, 0);
+            z-index: 3;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, .22);
+        }
+
+        .paper::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(to bottom,
+                    rgba(0, 0, 0, 0.045) 0px,
+                    rgba(0, 0, 0, 0.045) 1px,
+                    transparent 1px,
+                    transparent 18px);
+            opacity: .55;
+            pointer-events: none;
+        }
+
+        .paper::after {
+            content: "";
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            top: 0;
+            height: 26px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, .14), transparent);
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 1.0s ease, transform 1.0s ease;
+            pointer-events: none;
+        }
+
+        .paper.pull::after {
+            opacity: .35;
+            transform: translateY(0);
+        }
+
+        .paper-inner {
+            position: relative;
+            height: 100%;
+            padding: 28px 18px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 16px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 1.0s ease 1.2s;
+        }
+
+        .paper.pull .paper-inner {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            margin: 0;
+            text-align: center;
+            font-size: 28px;
+            line-height: 1.2;
+            color: var(--ink);
+            font-family: "Apple Chancery", "Snell Roundhand", "Segoe Script", "Bradley Hand", cursive;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        button {
+            flex: 1;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            border: none;
+            border-radius: 18px;
+            cursor: pointer;
+            touch-action: manipulation;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, .12);
+            transition: transform .12s ease;
+        }
+
+        /* FIXED: active scale per-button (your previous nesting was invalid CSS) */
+        #yes:active {
+            transform: scale(.98);
+        }
+
+        #no:active {
+            transform: scale(.98);
+        }
+
+        #yes {
+            background: #ff2d55;
+            color: white;
+        }
+
+        #no {
+            background: #111;
+            color: white;
+            position: relative;
+        }
+
+        .success {
+            display: none;
+            text-align: center;
+            font-size: 22px;
+            margin-top: 10px;
+        }
+
+        /* --- ENVELOPE --- */
+        .envelope {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 230px;
+            border-radius: 22px;
+            background: linear-gradient(145deg, #f4a9b8, #e48ca1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, .22);
+            overflow: visible;
+            z-index: 2;
+            transform-style: preserve-3d;
+        }
+
+        .env-pocket {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 160px;
+            border-bottom-left-radius: 22px;
+            border-bottom-right-radius: 22px;
+            background: linear-gradient(160deg, #e48ca1, #d8758d);
+            z-index: 4;
+            overflow: hidden;
+        }
+
+        .env-pocket::before {
+            content: "";
+            position: absolute;
+            left: 15%;
+            right: 15%;
+            top: -4px;
+            height: 16px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, .05);
+            filter: blur(4px);
+            opacity: .35;
+            pointer-events: none;
+        }
+
+        .env-pocket::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, .18), transparent);
+            opacity: 0;
+            transition: opacity .6s ease;
+            pointer-events: none;
+        }
+
+        .envelope.open .env-pocket::after {
+            opacity: .45;
+        }
+
+        .env-flap {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 175px;
+
+            background: linear-gradient(160deg, #f6b2c1, #e894aa);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+
+            transform-origin: top center;
+            transform: rotateX(0deg);
+            transition: transform 1.8s cubic-bezier(.2, .9, .2, 1);
+            transform-style: preserve-3d;
+
+            z-index: 5;
+            margin-top: -1px;
+            box-shadow: 0 12px 18px rgba(0, 0, 0, .12);
+            backface-visibility: visible;
+        }
+
+        .envelope.flap-open .env-flap {
+            transform: rotateX(165deg);
+        }
+
+        /* --- STAMP (rips on any click) --- */
+        .stamp {
+            position: absolute;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, .12);
+            user-select: none;
+            z-index: 6;
+            cursor: pointer;
+
+            overflow: visible;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .seal-emoji {
+            position: relative;
+            z-index: 3;
+            transition: opacity .2s ease;
+            pointer-events: none;
+        }
+
+        .stamp .tear {
+            position: absolute;
+            left: 50%;
+            top: 6%;
+            width: 14px;
+            height: 88%;
+            transform: translateX(-50%);
+            opacity: 0;
+            z-index: 4;
+            pointer-events: none;
+
+            /* toned down: pure black was too harsh */
+            background: linear-gradient(to right,
+                    rgba(0, 0, 0, .20),
+                    rgba(0, 0, 0, .06),
+                    rgba(0, 0, 0, .20));
+
+            clip-path: polygon(50% 0%,
+                    65% 5%,
+                    40% 10%,
+                    60% 15%,
+                    35% 20%,
+                    65% 25%,
+                    40% 30%,
+                    60% 35%,
+                    35% 40%,
+                    65% 45%,
+                    40% 50%,
+                    60% 55%,
+                    35% 60%,
+                    65% 65%,
+                    40% 70%,
+                    60% 75%,
+                    35% 80%,
+                    65% 85%,
+                    45% 95%,
+                    50% 100%);
+
+            filter: blur(.1px);
+        }
+
+        .stamp::before,
+        .stamp::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: #ffffff;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, .12);
+            opacity: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .stamp::before {
+            clip-path: polygon(0 0,
+                    55% 0,
+                    45% 10%,
+                    55% 20%,
+                    45% 30%,
+                    55% 40%,
+                    45% 50%,
+                    55% 60%,
+                    45% 70%,
+                    55% 80%,
+                    45% 90%,
+                    55% 100%,
+                    0 100%);
+        }
+
+        .stamp::after {
+            clip-path: polygon(45% 0,
+                    100% 0,
+                    100% 100%,
+                    45% 100%,
+                    55% 90%,
+                    45% 80%,
+                    55% 70%,
+                    45% 60%,
+                    55% 50%,
+                    45% 40%,
+                    55% 30%,
+                    45% 20%,
+                    55% 10%);
+        }
+
+        .stamp.rip {
+            animation: sealShake .35s ease both;
+        }
+
+        .stamp.rip .seal-emoji {
+            opacity: 0;
+        }
+
+        .stamp.rip .tear {
+            animation: tearShow .18s ease both;
+            opacity: 1;
+        }
+
+        .stamp.rip::before,
+        .stamp.rip::after {
+            opacity: 1;
+        }
+
+        .stamp.rip::before {
+            animation: splitLeft .55s ease .12s both;
+        }
+
+        .stamp.rip::after {
+            animation: splitRight .55s ease .12s both;
+        }
+
+        @keyframes sealShake {
+            0% {
+                transform: translateX(-50%) rotate(0deg);
+            }
+
+            25% {
+                transform: translateX(-50%) rotate(-7deg);
+            }
+
+            50% {
+                transform: translateX(-50%) rotate(7deg);
+            }
+
+            75% {
+                transform: translateX(-50%) rotate(-4deg);
+            }
+
+            100% {
+                transform: translateX(-50%) rotate(0deg);
+            }
+        }
+
+        @keyframes tearShow {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes splitLeft {
+            to {
+                transform: translateX(-10px) rotate(-12deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes splitRight {
+            to {
+                transform: translateX(10px) rotate(12deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stage">
+        <div class="tap-hint">💌 Ťukni na obálku</div>
+
+        <div class="envelope-wrap" id="envelopeWrap">
+
+            <div class="paper" id="paper">
+                <div class="paper-inner">
+                    <h1>Moja drahá Meli, budeš mojou valentínkou? 💖</h1>
+
+                    <div class="buttons">
+                        <button id="yes">ÁNO! 💞</button>
+                        <button id="no">Nie 🙃</button>
+                    </div>
+
+                    <div class="success" id="success">YAYYY!!! 🥰💘</div>
+                </div>
+            </div>
+
+            <div class="envelope" id="envelope">
+                <div class="env-flap"></div>
+                <div class="env-pocket"></div>
+
+                <div class="stamp" id="stamp" aria-label="Seal">
+                    <span class="seal-emoji">💖</span>
+                    <span class="tear" aria-hidden="true"></span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const envelopeWrap = document.getElementById("envelopeWrap");
+        const envelope = document.getElementById("envelope");
+        const paper = document.getElementById("paper");
+        const yes = document.getElementById("yes");
+        const noBtn = document.getElementById("no");
+        const success = document.getElementById("success");
+        const tapHint = document.querySelector(".tap-hint");
+        const stamp = document.getElementById("stamp");
+
+        let opened = false;
+        let dodges = 0;
+        let ripped = false;
+
+        // No-dodge state
+        let lastDodgeAt = 0;
+        let dodgeCooldownUntil = 0;
+        let noBase = null;
+
+        function showSuccess() {
+            success.style.display = "block";
+        }
+
+        function startOpenSequence() {
+            if (opened) return;
+            opened = true;
+
+            envelope.classList.add("flap-open");
+            envelope.classList.add("open");
+            if (tapHint) tapHint.style.display = "none";
+
+            setTimeout(() => {
+                paper.classList.add("armed");
+                resetNoBase(); // ✅ correct spot
+                requestAnimationFrame(() => {
+                    paper.classList.add("pull");
+                });
+            }, 1050);
+        }
+
+        function ripStampThenOpen() {
+            if (ripped) return;
+            ripped = true;
+
+            stamp.classList.add("rip");
+
+            setTimeout(() => {
+                startOpenSequence();
+            }, 180);
+        }
+
+        // Clicking ANYWHERE on the envelope area rips the stamp first, then opens.
+        envelopeWrap.addEventListener("click", () => {
+            if (!ripped) ripStampThenOpen();
+            else startOpenSequence();
+        });
+
+        // Also allow direct stamp click (stops bubbling but uses same behavior)
+        stamp.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!ripped) ripStampThenOpen();
+            else startOpenSequence();
+        });
+
+        // Guard: prevent accidental Yes right after a dodge
+        yes.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (Date.now() - lastDodgeAt < 500) return;
+            showSuccess();
+        });
+
+        // Prevent click bubbling
+        noBtn.addEventListener("click", (e) => e.stopPropagation());
+
+        function measureNoBase() {
+            const paperInner = paper.querySelector(".paper-inner");
+
+            // Temporarily remove transform to measure the true base position
+            const prev = noBtn.style.transform;
+            noBtn.style.transform = "";
+
+            const innerRect = paperInner.getBoundingClientRect();
+            const btnRect = noBtn.getBoundingClientRect();
+
+            noBtn.style.transform = prev;
+
+            noBase = {
+                x: btnRect.left - innerRect.left,
+                y: btnRect.top - innerRect.top,
+                w: btnRect.width,
+                h: btnRect.height
+            };
+        }
+
+        function dodge(e) {
+            if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            if (!opened) return;
+
+            const now = performance.now();
+            if (now < dodgeCooldownUntil) return;
+            dodgeCooldownUntil = now + 180;
+
+            if (!noBase) measureNoBase();
+
+            dodges++;
+            lastDodgeAt = Date.now();
+
+            const paperInner = paper.querySelector(".paper-inner");
+            const innerRect = paperInner.getBoundingClientRect();
+
+            const edge = 10;
+            const bottomSafe = 70;
+
+            let minDx = -noBase.x + edge;
+            let maxDx = (innerRect.width - (noBase.x + noBase.w)) - edge;
+
+            let minDy = -noBase.y + edge;
+            let maxDy = (innerRect.height - bottomSafe - (noBase.y + noBase.h)) - edge;
+
+            if (maxDx < minDx) { minDx = 0; maxDx = 0; }
+            if (maxDy < minDy) { minDy = 0; maxDy = 0; }
+
+            const dx = minDx + Math.random() * (maxDx - minDx);
+            const dy = minDy + Math.random() * (maxDy - minDy);
+
+            noBtn.style.transform = `translate(${dx}px, ${dy}px)`;
+
+            // Prevent "Yes" looking pressed due to mouse-up landing on it
+            yes.style.pointerEvents = "none";
+            setTimeout(() => { yes.style.pointerEvents = ""; }, 250);
+
+            if (dodges === 3) noBtn.textContent = "Si si istá? 😅";
+            if (dodges === 5) noBtn.textContent = "Nemáš na výber, klikni ÁNO 😇";
+            if (dodges >= 7) noBtn.textContent = "No taaak, urob to 🙄";
+        }
+
+        function resetNoBase() {
+            noBase = null;
+            requestAnimationFrame(() => requestAnimationFrame(measureNoBase));
+        }
+
+        // Dodge only when you actually press the No button
+        noBtn.addEventListener("pointerdown", dodge);
+        noBtn.addEventListener("click", (e) => e.preventDefault());
+    </script>
+</body>
+
+</html>
